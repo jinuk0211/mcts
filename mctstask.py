@@ -150,8 +150,8 @@ class MCTS_Task(SearchTask):
             print('Failed to get the next step!\n')
             return ''
         print(response)
-        if len(response) > 5:
-            response = response[:5]
+        # if len(response) > 5:
+        #     response = response[:5]
 
         p = ''
         for _ in response:
@@ -165,7 +165,7 @@ class MCTS_Task(SearchTask):
                     print('output이 너무 적습니다!\n')
                     return ''
                 if stp in y:
-                    print('输出步骤重复！\n')
+                    print('출력된 단계가 중복되었습니다!"\n')
                     return ''
 
                 revised_ = 'Step ' + str(step_n) + ': ' + stp
@@ -181,11 +181,11 @@ class MCTS_Task(SearchTask):
                     return ''
                 p_ = p_[1:].strip()
                 if p_ in y:
-                    print('输出步骤重复！\n')
+                    print('출력된 단계가 중복되었습니다!"\n')
                     return ''
 
                 revised_ = 'Step ' + str(step_n) + ': ' + p_
-                print(f'标准化后新的步骤:{revised_}\n')
+                print(f'revised 이후의 step:{revised_}\n')
                 return revised_ + '\n'
 
             else:
@@ -194,11 +194,11 @@ class MCTS_Task(SearchTask):
                     print('output이 너무 적습니다!\n')
                     return ''
                 if p_ in y:
-                    print('输出步骤重复！\n')
+                    print('출력된 단계가 중복되었습니다!"\n')
                     return ''
 
                 revised_ = 'Step ' + str(step_n) + ': ' + p_
-                print(f'标准化后新的步骤:{revised_}\n')
+                print(f'revised 이후의 step:{revised_}\n')
                 return revised_ + '\n'
 
 
@@ -214,9 +214,9 @@ class MCTS_Task(SearchTask):
         if not response:
             print('Failed to get the next step!\n')
             return ''
-
-        if len(response) > 5:
-            response = response[:5]
+        print(response)
+        # if len(response) > 5:
+        #     response = response[:5]
 
         p = ''
         for _ in response:
@@ -229,11 +229,11 @@ class MCTS_Task(SearchTask):
                 print('output이 너무 적습니다!\n')
                 return ''
             if stp in y:
-                print('输出步骤重复！\n')
+                print('출력된 단계가 중복되었습니다!"\n')
                 return ''
 
             revised_ = 'Step ' + str(step_n) + ': ' + stp
-            print(f'标准化后新的步骤:{revised_}\n')
+            print(f'revised 이후의 step:{revised_}\n')
             return revised_ + '\n'
 
         elif "Step" in p and ":" in p:
@@ -245,11 +245,11 @@ class MCTS_Task(SearchTask):
                 return ''
             p_ = p_[1:].strip()
             if p_ in y:
-                print('输出步骤重复！\n')
+                print('출력된 단계가 중복되었습니다!"\n')
                 return ''
 
             revised_ = 'Step ' + str(step_n) + ': ' + p_
-            print(f'标准化后新的步骤:{revised_}\n')
+            print(f'revised 이후의 step:{revised_}\n')
             return revised_ + '\n'
 
         else:
