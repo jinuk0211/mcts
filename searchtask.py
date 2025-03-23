@@ -150,15 +150,15 @@ class SearchTask(object):
         all_out = ''
         for _ in value_outputs:
             all_out = all_out + _
-        if '分数' not in all_out:
-            print('分数output不合法!\n')
+        if 'score' not in all_out:
+            print('점수 출력이 올바르지 않습니다 value_outputs_unwrap\n')
             return out_value
-        stp = all_out.split('分数')[-1].strip()
+        stp = all_out.split('score')[-1].strip()
         try:
             match = re.findall(r'-?[0-9]+\.?[0-9]*', stp)[-1]
             out_value = float(match)
             out_value = min(max(low, out_value), high)
         except Exception as e:
-            print(f'分数output有误！错误类型:{e}\n')
+            print(f'점수 출력에 오류가 있습니다! 오류 유형:{e}\n')
             return low
         return out_value

@@ -93,7 +93,7 @@ class MCTS_Task(SearchTask):
                     if self.lang == 'en':
                         #summary 제공
                         prompt = self.MATH_summary_prompt_wrap(self.question, solution)
-                        response = get_proposal(prompt, self.propose_method, self.img_path)
+                        response = get_proposal(self.model,self.processor,prompt , self.img_path)
 
                         if not response:
                             print('Failed to get the review!\n')
@@ -147,9 +147,9 @@ class MCTS_Task(SearchTask):
 
         response =  get_proposal(self.model, self.processor, prompt, self.img_path)
         if not response:
-            print('获得下一步失败！\n')
+            print('Failed to get the next step!\n')
             return ''
-
+        print(response)
         if len(response) > 5:
             response = response[:5]
 
@@ -212,7 +212,7 @@ class MCTS_Task(SearchTask):
                                                                           self.lang)
         response = get_proposal(self.model, self.processor, propose_prompt,self.img_path)
         if not response:
-            print('获得下一步失败！\n')
+            print('Failed to get the next step!\n')
             return ''
 
         if len(response) > 5:
