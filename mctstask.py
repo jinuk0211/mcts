@@ -602,6 +602,7 @@ def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_me
         if clip:
             clip_score = get_clip_score(action,img_path,clip,clip_processor)
             response = 0.5 * clip_score + response  
+            print(f'clip score: {clip_score}')
             return response
         return response
 
