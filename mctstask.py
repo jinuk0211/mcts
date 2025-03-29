@@ -20,7 +20,7 @@ from prompt import llm_prompt
 
 
 class MCTS_Task(SearchTask):
-    def __init__(self,data, model, processor, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
+    def __init__(self,data, model, processor,clip,clip_processor,llm, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
                  roll_branch=1, roll_forward_steps=3, time_limit=None, iteration_limit=3, exploration_constant=0.7,
                  alpha=0.5, inf=1.0, temperature=0.7, max_tokens=2048, seed=170, max_length=2048, truncation=True,
                  do_sample=True, max_new_tokens=256, use_case_prompt=False, use_reflection='simple', low=0, high=1,
@@ -29,6 +29,9 @@ class MCTS_Task(SearchTask):
         assert 0 <= low < high, "Inappropriate value range!"
         self.model = model
         self.processor = processor
+        self.clip = clip
+        self.clip_processor = clip_processor
+        self.llm = llm
         self.img_path = img_path
         self.mode = 'mcts'
         self.temperature = temperature
@@ -93,7 +96,7 @@ class MCTS_Task(SearchTask):
                     if self.lang == 'en':
                         #summary 제공
                         prompt = self.MATH_summary_prompt_wrap(self.question, solution)
-                        response = get_proposal(self.model,self.processor,prompt , self.img_path)
+                        response = get_proposal(self.model,self.processor, prompt , self.img_path)
 
                         if not response:
                             print('Failed to get the review!\n')
@@ -271,7 +274,7 @@ class MCTS_Task(SearchTask):
           cnt = 3
           response = []
           while not response and cnt:
-              response = get_proposal(self.model, self.processor, reflection_prompt,self.img_path)
+              response = get_proposal(self.model, self.processor, reflection_prompt)
               cnt -= 1
         except Exception as e:
           print(f'obtain<{self.propose_method}>reflection fail!\nError:{e}\n')
@@ -371,7 +374,7 @@ class MCTS_Task(SearchTask):
             else:
                 prompt = self.summary_prompt_wrap(self.question, y)
 
-            response = get_proposal(self.model, self.processor, prompt, self.img_path)
+            response = get_proposal(self.model, self.processor,prompt = prompt,img_path = self.img_path)
 
             if not response:
                 print('Failed to get the review!失败！\n')
@@ -412,7 +415,7 @@ class MCTS_Task(SearchTask):
 
         else:
             prompt = self.MATH_summary_prompt_wrap(self.question, y)
-            response = get_proposal(self.model, self.processor, prompt,self.img_path)
+            response = get_proposal(self.model, self.processor,prompt= prompt,img_path = self.img_path)
             if not response:
                 print('Failed to get the review!失败！\n')
                 return ''
@@ -426,7 +429,7 @@ class MCTS_Task(SearchTask):
 
     def get_MATH_summary(self, y):
         prompt = self.MATH_summary_prompt_wrap(self.question, y)
-        response = get_proposal(self.model, self.processor, prompt, self.img_path)
+        response = get_proposal(self.model, self.processor, prompt=prompt, img_path=self.img_path)
         if not response:
             print('Failed to get the review!失败！\n')
             return ''
@@ -535,6 +538,8 @@ class MCTS_Task(SearchTask):
             return solution, summ
 
     def get_step_value(self, y, action):
+        print(f"get_step_value의 y값:{y}\n")
+        print(f"get_step_value의 action값:{action}")
         if y in self.value_cache.keys():
             return self.value_cache[y]
         prompt_answer = 'Problem: ' + self.question + '\nSolution:\n' + y
@@ -544,7 +549,7 @@ class MCTS_Task(SearchTask):
             lmm_prompt = self.value_prompt_wrap(self.question, y) 
         llm_prompt = self.llm_prompt(self.question, y)
         if self.value_method == 'local_prm': #clip, prm + llm + prm
-            confidence, value_score = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path)
+            confidence, value_score = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path, self.clip,self.clip_processor, self.llm)
             value = (1-self.alpha)*confidence + self.alpha*value_score
             print(f'获得评分:{value}\n') #评分
             self.value_cache.update({y: value})
@@ -564,46 +569,49 @@ class MCTS_Task(SearchTask):
 
         else: #qwen, llama3 등의 lmm
             # confidence, response = get_value(prompt, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path)
-            response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path)
+            response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path,self.clip,self.clip_processor, self.llm)
             value = self.value_outputs_unwrap(response, self.low, self.high)
             # value = (1-self.alpha)*confidence + self.alpha*value
-            print(f'获得评分:{value}\n') #평가받기
+            print(f'response and 타입{response,type(response)}\n')
+            print(f'unwrapped_value:{value}\n') #평가받기
             self.value_cache.update({y: value})
             return value
 
 # clip_model = CLIPModel.from_pretrained('openai/clip-vit-large-patch14-336')
 # clip_processor = AutoProcessor.from_pretrained('openai/clip-vit-large-patch14-336')
 
-# def get_clip_score(new_text, image, model, processor):
-#   if not new_text:
-#       return None
-#   image = Image.open(img_path)
-#   inputs = processor(text=[new_text], images=image, return_tensors="pt", padding=True).to(model.device)
-#   with torch.no_grad():
-#       outputs = model(**inputs)
-#   logits_per_image = outputs.logits_per_image
-#   clip_score = logits_per_image.cpu().detach().numpy()[0][0]
-#   return clip_score
+def get_clip_score(new_text, image, model, processor):
+  if not new_text:
+      return None
+  image = Image.open(img_path)
+  inputs = processor(text=[new_text], images=image, return_tensors="pt", padding=True).to(model.device)
+  with torch.no_grad():
+      outputs = model(**inputs)
+  logits_per_image = outputs.logits_per_image
+  clip_score = logits_per_image.cpu().detach().numpy()[0][0]
+  return clip_score
 
-def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_method, img_path):
+def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_method, img_path,clip,clip_processor, llm):
     response = []
     cnt = 2
     if 'Image Description' in action:
         # clip_score = get_clip_score(action,img_path,clip_model,clip_processor)
         response = get_proposal(model, processor, lmm_prompt, img_path)
         # return clip_score, response
+        if clip:
+            clip_score = get_clip_score(action,img_path,clip,clip_processor)
+            response = 0.5 * clip_score + response  
+            return response
         return response
+
         
     else:  #lmm은 둘다동일하지만 이제 img -> clip, reasoning_step -> llm
         while not response and cnt:
             # value = LLM(llm_prompt, BASE_MODEL_GLM, temperature=temperature, max_tokens=max_tokens, seed=seed)
             response = get_proposal(model, processor, lmm_prompt, img_path)
-            
             cnt -= 1
-        # if not value:
-        #     print(f'obtain<{method}>score fail!\n')
-        #     return []
-        # return value, response
+            if llm:
+                llm_response = llm_proposal(llm_prompt)
         return response
 
 

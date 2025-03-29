@@ -5,6 +5,8 @@ Provide only decimal score between 0 and 1
 Input: 
 Problem:"""
 
+
+
 image_description_score = '''Score how well the image description relates to the given problem. Higher accuracy of description should result in a higher score, which must be between 0 and 1.
 Input:
 Problem: '''
