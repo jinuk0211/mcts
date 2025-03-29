@@ -88,7 +88,7 @@ class SearchTask(object):
     @staticmethod
     def single_propose_prompt_wrap(x: str, y: str = '', step: int = 0) -> str:
         print('\n', '==============================', 'proposal', '==============================', '\nstep: ', step)
-        print('propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
+        print('single_propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
         prompt = single_proposal_prompt + x + '\nexisting step:\n' + y + '\noutput:'
         return prompt
 
@@ -96,7 +96,7 @@ class SearchTask(object):
     @staticmethod
     def zero_single_propose_wrap(x: str, y: str = '', step: int = 0, lang: str = 'zh') -> str:
         print('\n', '==============================', 'proposal', '==============================', '\nstep: ', step)
-        print('propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
+        print('zero_propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
         if not y:
             y = 'None\n'
         prompt = zero_single_proposal_prompt_en + x + '\nExisting Steps:\n' + y + '\nOutput:'
@@ -106,7 +106,7 @@ class SearchTask(object):
     @staticmethod
     def zero_single_propose_wrap_use_reflection(x: str, y: str = '', step: int = 0, ref: str = '', lang: str = 'zh') -> str:
         print('\n', '==============================', 'proposal', '==============================', '\nstep: ', step)
-        print('propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
+        print('zero_reflect_propose_prompt: \n', x + '\nexisting step:\n' + y + 'Based on the steps outlined earlier, a possible solution for the current step is:\n')
         if lang == 'en':
             if not y:
                 y = 'None\n'

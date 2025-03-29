@@ -152,7 +152,7 @@ class MCTS_Task(SearchTask):
         if not response:
             print('Failed to get the next step!\n')
             return ''
-        print(response)
+        print(f'response:{response}')
         # if len(response) > 5:
         #     response = response[:5]
 
@@ -163,7 +163,8 @@ class MCTS_Task(SearchTask):
 
         if self.lang == 'en':
             if "Next step:" in p:
-                stp = p.split('Next step:')[1].strip()
+                # stp = p.split('Next step:')[1].strip()
+                stp = re.split(r'Next step:\s*', p, maxsplit=1)[-1].strip()
                 if len(stp) < 2:
                     print('output이 너무 적습니다!\n')
                     return ''
@@ -175,21 +176,21 @@ class MCTS_Task(SearchTask):
                 print(f'표준화된 next step:{revised_}\n')
                 return revised_ + '\n'
 
-            elif "Step" in p and ":" in p:
-                pre_len = len(p.split(':')[0])
-                p_ = p[pre_len:]
-                p_ = p_.split('Step')[0].strip()
-                if len(p_) < 4:
-                    print('output이 너무 적습니다!\n')
-                    return ''
-                p_ = p_[1:].strip()
-                if p_ in y:
-                    print('출력된 단계가 중복되었습니다!"\n')
-                    return ''
+            # elif "Step" in p and ":" in p:
+            #     pre_len = len(p.split(':')[0])
+            #     p_ = p[pre_len:]
+            #     p_ = p_.split('Step')[0].strip()
+            #     if len(p_) < 4:
+            #         print('output이 너무 적습니다!\n')
+            #         return ''
+            #     p_ = p_[1:].strip()
+            #     if p_ in y:
+            #         print('출력된 단계가 중복되었습니다!"\n')
+            #         return ''
 
-                revised_ = 'Step ' + str(step_n) + ': ' + p_
-                print(f'revised 이후의 step:{revised_}\n')
-                return revised_ + '\n'
+            #     revised_ = 'Step ' + str(step_n) + ': ' + p_
+            #     print(f'revised 이후의 step:{revised_}\n')
+            #     return revised_ + '\n'
 
             else:
                 p_ = p.strip()
@@ -199,9 +200,9 @@ class MCTS_Task(SearchTask):
                 if p_ in y:
                     print('출력된 단계가 중복되었습니다!"\n')
                     return ''
-
+                p_ = re.split(r'Next step:\s*', p_, maxsplit=1)[-1].strip()
                 revised_ = 'Step ' + str(step_n) + ': ' + p_
-                print(f'revised 이후의 step:{revised_}\n')
+                print(f'revised 이후의 step: {revised_}\n')
                 return revised_ + '\n'
 
 
