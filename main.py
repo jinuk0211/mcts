@@ -33,6 +33,9 @@ def run(args):
     assert data_len > 0, "Data list is empty!\n"
 
     model, processor = qwen('Qwen2_5')
+    clip_model,clip_processor = clip('clip')
+    llm = LLM()
+    ,clip_model,clip_processor
     output_list = []
     correct_count = 0
     for i in len(dataset.data):
@@ -45,7 +48,7 @@ def run(args):
 
 # base_args.add_argument('--propose_method', type=str, choices=['gpt', 'glm', 'llama', 'local'], default='glm')
 # base_args.add_argument('--value_method', type=str, choices=['gpt', 'glm', 'local'], default='local')
-        Task = MCTS_Task(question, model, processor, args.propose_method, args.value_method, args.branch, args.end_gate,
+        Task = MCTS_Task(question, model, processor,clip_model,clip_processor,llm, args.propose_method, args.value_method, args.branch, args.end_gate,
                             args.roll_policy, args.roll_branch, args.roll_forward_steps, args.time_limit,
                             args.iteration_limit, args.exploration_constant, args.alpha, args.inf,
                             args.temperature, use_case_prompt=args.use_case_prompt, use_reflection=args.use_reflection,

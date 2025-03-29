@@ -18,7 +18,17 @@ def qwen(model):
 
         return Qwen2_5, Qwen2_5_processor
 
+def clip(model):
+    if model == 'clip':
+        print('init clip model')
 
+        return clip_model, clip_processor
+
+def LLM():
+    if model == 'qwen':
+        print('init llm model')       
+
+        return llm
 def get_proposal(model, processor, prompt, img_path):
     #temperature=0.7, max_tokens=2048, seed=170, max_length=2048, truncation=True,do_sample=True, max_new_tokens=1024
     
