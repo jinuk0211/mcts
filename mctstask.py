@@ -142,6 +142,54 @@ class MCTS_Task(SearchTask):
         response = get_proposal(self.model, self.processor, prompt, self.img_path)
         return response
     
+    # def get_next_step(self, y, step_n):
+
+    #     if self.propose_method == 'gpt':
+    #         prompt = self.zero_single_propose_wrap_gpt(self.question, y, step_n, self.lang)
+    #     else:
+    #         prompt = self.zero_single_propose_wrap(self.question, y, step_n, self.lang)
+
+    #     response =  get_proposal(self.model, self.processor, prompt, self.img_path)
+    #     if not response:
+    #         print('Failed to get the next step!\n')
+    #         return ''
+    #     print(f'response:{response}')
+    #     # if len(response) > 5:
+    #     #     response = response[:5]
+
+    #     p = ''
+    #     for _ in response:
+    #         p = p + _ + ' '
+    #     p = p.strip()
+
+    #     if self.lang == 'en':
+    #         if "Next step:" in p:
+    #             # stp = p.split('Next step:')[1].strip()
+    #             stp = re.split(r'Next step:\s*', p, maxsplit=1)[-1].strip()
+    #             if len(stp) < 2:
+    #                 print('output이 너무 적습니다!\n')
+    #                 return ''
+    #             if stp in y:
+    #                 print('출력된 단계가 중복되었습니다!"\n')
+    #                 return ''
+
+    #             revised_ = 'Step ' + str(step_n-1) + ': ' + stp
+    #             print(f'표준화된 next step:{revised_}\n')
+    #             return revised_ + '\n'
+
+
+    #         else:
+    #             p_ = p.strip()
+    #             if len(p_) < 3:
+    #                 print('output이 너무 적습니다!\n')
+    #                 return ''
+    #             if p_ in y:
+    #                 print('출력된 단계가 중복되었습니다!"\n')
+    #                 return ''
+    #             p_ = re.split(r'Next step:\s*', p_, maxsplit=1)[-1].strip()
+    #             revised_ = 'Step ' + str(step_n) + ': ' + p_
+    #             print(f'revised 이후의 step: {revised_}\n')
+    #             return revised_ + '\n'
     def get_next_step(self, y, step_n):
 
         if self.propose_method == 'gpt':
@@ -156,55 +204,15 @@ class MCTS_Task(SearchTask):
         print(f'response:{response}')
         # if len(response) > 5:
         #     response = response[:5]
+        
+        if response.startswith("Next step: "):  
+            stp = response[len("Next step: "):]  # "Next step: " 길이만큼 잘라냄
+        else:
+            stp = response  # "Next step: "이 없으면 그대로 유지
 
-        p = ''
-        for _ in response:
-            p = p + _ + ' '
-        p = p.strip()
-
-        if self.lang == 'en':
-            if "Next step:" in p:
-                # stp = p.split('Next step:')[1].strip()
-                stp = re.split(r'Next step:\s*', p, maxsplit=1)[-1].strip()
-                if len(stp) < 2:
-                    print('output이 너무 적습니다!\n')
-                    return ''
-                if stp in y:
-                    print('출력된 단계가 중복되었습니다!"\n')
-                    return ''
-
-                revised_ = 'Step ' + str(step_n) + ': ' + stp
-                print(f'표준화된 next step:{revised_}\n')
-                return revised_ + '\n'
-
-            # elif "Step" in p and ":" in p:
-            #     pre_len = len(p.split(':')[0])
-            #     p_ = p[pre_len:]
-            #     p_ = p_.split('Step')[0].strip()
-            #     if len(p_) < 4:
-            #         print('output이 너무 적습니다!\n')
-            #         return ''
-            #     p_ = p_[1:].strip()
-            #     if p_ in y:
-            #         print('출력된 단계가 중복되었습니다!"\n')
-            #         return ''
-
-            #     revised_ = 'Step ' + str(step_n) + ': ' + p_
-            #     print(f'revised 이후의 step:{revised_}\n')
-            #     return revised_ + '\n'
-
-            else:
-                p_ = p.strip()
-                if len(p_) < 3:
-                    print('output이 너무 적습니다!\n')
-                    return ''
-                if p_ in y:
-                    print('출력된 단계가 중복되었습니다!"\n')
-                    return ''
-                p_ = re.split(r'Next step:\s*', p_, maxsplit=1)[-1].strip()
-                revised_ = 'Step ' + str(step_n) + ': ' + p_
-                print(f'revised 이후의 step: {revised_}\n')
-                return revised_ + '\n'
+        revised_ = 'Step ' + str(step_n-1) + ': ' + stp
+        print(f'revised 이후의 step: {revised_}\n')
+        return revised_ + '\n'    
 
 
 
@@ -237,7 +245,7 @@ class MCTS_Task(SearchTask):
                 print('출력된 단계가 중복되었습니다!"\n')
                 return ''
 
-            revised_ = 'Step ' + str(step_n) + ': ' + stp
+            revised_ = 'Step ' + str(step_n-1) + ': ' + stp
             print(f'revised 이후의 step:{revised_}\n')
             return revised_ + '\n'
 
@@ -253,7 +261,7 @@ class MCTS_Task(SearchTask):
                 print('출력된 단계가 중복되었습니다!"\n')
                 return ''
 
-            revised_ = 'Step ' + str(step_n) + ': ' + p_
+            revised_ = 'Step ' + str(step_n-1) + ': ' + p_
             print(f'revised 이후의 step:{revised_}\n')
             return revised_ + '\n'
 
@@ -516,7 +524,7 @@ class MCTS_Task(SearchTask):
 
     def get_step_value(self, y, action):
         print(f"get_step_value의 y값:{y}\n")
-        print(f"get_step_value의 action값:{action}")
+        print(f"get_step_value의 action값:{action}\n")
         if y in self.value_cache.keys():
             return self.value_cache[y]
         prompt_answer = 'Problem: ' + self.question + '\nSolution:\n' + y
@@ -532,10 +540,10 @@ class MCTS_Task(SearchTask):
 
       #qwen, llama3 등의 lmm
         response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path,self.clip,self.clip_processor, self.llm)
-        value = self.value_outputs_unwrap(response, self.low, self.high)
+        # value = self.value_outputs_unwrap(response, self.low, self.high)
         # value = (1-self.alpha)*confidence + self.alpha*value
         print(f'response and 타입{response,type(response)}\n')
-        print(f'unwrapped_value:{value}\n') #평가받기
+        # print(f'unwrapp된 value:{value}\n') #평가받기
         self.value_cache.update({y: value})
         return value
 
@@ -553,17 +561,37 @@ def get_clip_score(new_text, image, model, processor):
   clip_score = logits_per_image.cpu().detach().numpy()[0][0]
   return clip_score
 
+def value_outputs_unwrap(value_outputs: list, low=0.0, high=1.0) -> float:
+    out_value = low
+    all_out = ''
+    for _ in value_outputs:
+        all_out = all_out + _
+    if 'score' not in all_out:
+        print('점수 출력이 올바르지 않습니다 value_outputs_unwrap\n')
+        return out_value
+    stp = all_out.split('score')[-1].strip()
+    try:
+        match = re.findall(r'-?[0-9]+\.?[0-9]*', stp)[-1]
+        out_value = float(match)
+        out_value = min(max(low, out_value), high)
+    except Exception as e:
+        print(f'점수 출력에 오류가 있습니다! 오류 유형:{e}\n')
+        return low
+    return out_value
+
 def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_method, img_path,clip,clip_processor, llm):
     response = []
     cnt = 2
     if 'Image Description' in action:
         # clip_score = get_clip_score(action,img_path,clip_model,clip_processor)
         response = get_proposal(model, processor, lmm_prompt, img_path)
+        response=value_outputs_unwrap(response)
+        print(f'이미지 묘사에 대한 unwrap된 lmm점수: {response}\n')
         # return clip_score, response
         if clip:
             clip_score = get_clip_score(action,img_path,clip,clip_processor)
-            response = 0.5 * clip_score + response  
-            print(f'clip score: {clip_score}')
+            response = 0.5 * int(clip_score) + 0.5 * int(response)
+            print(f'clip 점수: {clip_score}\n')
             return response
         return response
 
@@ -572,9 +600,13 @@ def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_me
         while not response and cnt:
             # value = LLM(llm_prompt, BASE_MODEL_GLM, temperature=temperature, max_tokens=max_tokens, seed=seed)
             response = get_proposal(model, processor, lmm_prompt, img_path)
+            response=value_outputs_unwrap(response)
+            print(f'step에 대한 unwrap된 lmm점수: {response}\n')
             cnt -= 1
             if llm:
                 llm_response = llm_proposal(llm_prompt)
+                print(f'llm 점수: {llm_response}\n')
+                response = 0.5 * int(llm_response) + 0.5 * int(response)
         return response
 
 

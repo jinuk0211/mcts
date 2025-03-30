@@ -21,6 +21,7 @@ class SearchTask(object):
 
     @staticmethod
     def image_description_score(x,y):
+        print('\n', '==============================', 'image description', '==============================', '\n')
         prompt = image_description_score + x 
         return prompt
     @staticmethod
@@ -59,7 +60,7 @@ class SearchTask(object):
         Problem: '''
 
         print('\n', '==============================', 'summary', '==============================', '\n')
-        print('summary_prompt: \n', x + '\nexisting step:\n' + y + 'The summary based on the reasoning steps i:\n')
+        print('math_summary_prompt: \n', x + '\nexisting step:\n' + y + 'The summary based on the reasoning steps i:\n')
         prompt = MATH_summary_prompt + x + '\nSolution: ' + y + '\nExtracted answer:'
         return prompt
 
@@ -122,7 +123,7 @@ class SearchTask(object):
     @staticmethod
     def single_reflection_wrap(x: str, y: str = '', step: int = 0, lang: str = 'zh') -> str:
         print('\n', '==============================', 'reflection', '==============================', '\nstep: ', step)
-        print('propose_prompt: \n', x + '\nexisting step:\n' + y + '基于以上步骤给出的意见:\n')
+        print('reflection_prompt: \n', x + '\nexisting step:\n' + y + '基于以上步骤给出的意见:\n')
 
         if not y:
             y = 'None\n'

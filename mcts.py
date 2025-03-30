@@ -143,7 +143,7 @@ def executeRound(root, mcts_task):
     print('-' * 40)
     print('selection phase\n')
     flag, node = selectNode(root, mcts_task) #if isTerminal(node, mcts_task)이면 node.final_ans_flag = 1,return True, node
-    print(f'{flag}')
+    print(f'isTerminal(node)인가?: {flag}')
     if flag:
         if mcts_task.sample_value != 'full':
             return True, node, root
