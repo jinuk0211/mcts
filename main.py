@@ -51,7 +51,7 @@ def run(args):
                             args.roll_policy, args.roll_branch, args.roll_forward_steps, args.time_limit,
                             args.iteration_limit, args.exploration_constant, args.alpha, args.inf,
                             args.temperature, use_case_prompt=args.use_case_prompt, use_reflection=args.use_reflection,
-                            low=args.low, high=args.high, evaluate=args.evaluate,img_path=img)
+                            low=args.low, high=args.high, evaluate=args.evaluate,img_path=img, clip, clip_processor, llm, tokenizer, )
         output, root = Task.run()
         print(output)
         # evaluate metrics

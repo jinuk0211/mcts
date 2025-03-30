@@ -20,12 +20,12 @@ from prompt import llm_prompt
 
 
 class MCTS_Task(SearchTask):
-    def __init__(self,data, model, processor, clip, clip_processor, llm, tokenizer, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
+    def __init__(self,data, model, processor, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
                  roll_branch=1, roll_forward_steps=3, time_limit=None, iteration_limit=3, exploration_constant=0.7,
                  alpha=0.5, inf=1.0, temperature=0.7, max_tokens=2048, seed=170, max_length=2048, truncation=True,
                  do_sample=True, max_new_tokens=256, use_case_prompt=False, use_reflection='simple', low=0, high=1,
                  evaluate='', sample_value='simple', answer=None, verify_method='string', lang='en', weighted_verify=False, img_path=''):
-        super().__init__(data, propose_method, value_method)
+        super().__init__(data, propose_method, value_method, clip=None, clip_processor=None, llm=None, tokenizer=None)
         assert 0 <= low < high, "Inappropriate value range!"
         self.model = model
         self.processor = processor
@@ -102,12 +102,13 @@ class MCTS_Task(SearchTask):
                         if not response:
                             print('Failed to get the review!\n')
                             return ''
-                        p = ''
-                        for _ in response:
-                            p = p + _
-                        summ = p.strip()
-                        print(f'Failed to get the summary!:{summ}\n')
-                        summary = summ     #get_summary 끝부분
+                        # p = ''
+                        # for _ in response:
+                        #     p = p + _
+                        # summ = p.strip()
+                        print(f'math_summary_prompt에 의한 결과:{response}\n')
+                        summary =response.split("The final answer is")[-1].strip()
+                     
                     final_answer = {'content': self.question, 'solution': solution, 'summary': summary,
                                     'finish': finish}
                     if self.sample_value == 'simple':
@@ -531,11 +532,15 @@ class MCTS_Task(SearchTask):
 
         if 'Image Description' in action:
             lmm_prompt = self.image_description_score(self.question, y)
-            confidence = get_clip_score(action,self.img_path)
+            if self.clip:
+                confidence = get_clip_score(action,self.img_path)
+                print(f'clip 점수: {confidence}\n')
         else:
             lmm_prompt = self.value_prompt_wrap(self.question, y) 
             llm_prompt = self.llm_prompt(self.question,y)
-            confidence = self.llm_proposal(self.llm,self.tokenizer,llm_prompt)
+            if self.llm:
+                confidence = llm_proposal(self.llm,self.tokenizer,llm_prompt)
+                print(f'llm 점수: {confidence}\n')
 
 
       #qwen, llama3 등의 lmm
@@ -543,6 +548,10 @@ class MCTS_Task(SearchTask):
         # value = self.value_outputs_unwrap(response, self.low, self.high)
         # value = (1-self.alpha)*confidence + self.alpha*value
         print(f'response and 타입{response,type(response)}\n')
+        if confidence: #컨피던스가 있는경우
+            value = 0.5 * int(confidence) + 0.5 * int(response)
+        else: #없는경우 ablation study활용
+            value = response 
         # print(f'unwrapp된 value:{value}\n') #평가받기
         self.value_cache.update({y: value})
         return value
@@ -561,22 +570,35 @@ def get_clip_score(new_text, image, model, processor):
   clip_score = logits_per_image.cpu().detach().numpy()[0][0]
   return clip_score
 
-def value_outputs_unwrap(value_outputs: list, low=0.0, high=1.0) -> float:
+# def value_outputs_unwrap(value_outputs: list, low=0.0, high=1.0) -> float:
+#     out_value = low
+#     all_out = ''
+#     for _ in value_outputs:
+#         all_out = all_out + _
+#     if 'score' not in all_out:
+#         print('점수 출력이 올바르지 않습니다 value_outputs_unwrap\n')
+#         return out_value
+#     stp = all_out.split('score')[-1].strip()
+#     try:
+#         match = re.findall(r'-?[0-9]+\.?[0-9]*', stp)[-1]
+#         out_value = float(match)
+#         out_value = min(max(low, out_value), high)
+#     except Exception as e:
+#         print(f'점수 출력에 오류가 있습니다! 오류 유형:{e}\n')
+#         return low
+#     return out_value # 밑의 버젼은 simple에서 사용한거
+def value_outputs_unwrap(value_outputs, low=0.0, high=1.0) -> float:
     out_value = low
-    all_out = ''
-    for _ in value_outputs:
-        all_out = all_out + _
-    if 'score' not in all_out:
+    print(f'value_unwrap 안되는 이유:{value_outputs,type(value_outputs)}')
+    if 'Score' not in value_outputs:
         print('점수 출력이 올바르지 않습니다 value_outputs_unwrap\n')
-        return out_value
-    stp = all_out.split('score')[-1].strip()
     try:
-        match = re.findall(r'-?[0-9]+\.?[0-9]*', stp)[-1]
-        out_value = float(match)
+        out_value = float(value_outputs.split(":")[-1].strip())
         out_value = min(max(low, out_value), high)
     except Exception as e:
         print(f'점수 출력에 오류가 있습니다! 오류 유형:{e}\n')
         return low
+    print(f'최종:{out_value,type(out_value)}')
     return out_value
 
 def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_method, img_path,clip,clip_processor, llm):
@@ -588,27 +610,14 @@ def get_value(model, processor, prompt, llm_prompt, lmm_prompt, action, value_me
         response=value_outputs_unwrap(response)
         print(f'이미지 묘사에 대한 unwrap된 lmm점수: {response}\n')
         # return clip_score, response
-        if clip:
-            clip_score = get_clip_score(action,img_path,clip,clip_processor)
-            response = 0.5 * int(clip_score) + 0.5 * int(response)
-            print(f'clip 점수: {clip_score}\n')
-            return response
         return response
-
         
     else:  #lmm은 둘다동일하지만 이제 img -> clip, reasoning_step -> llm
         while not response and cnt:
             # value = LLM(llm_prompt, BASE_MODEL_GLM, temperature=temperature, max_tokens=max_tokens, seed=seed)
             response = get_proposal(model, processor, lmm_prompt, img_path)
-            response=value_outputs_unwrap(response)
+            response = value_outputs_unwrap(response)
             print(f'step에 대한 unwrap된 lmm점수: {response}\n')
             cnt -= 1
-            if llm:
-                llm_response = llm_proposal(llm_prompt)
-                print(f'llm 점수: {llm_response}\n')
-                response = 0.5 * int(llm_response) + 0.5 * int(response)
         return response
 
-
-#utils.py
-    #MCTS_Task 클래스
