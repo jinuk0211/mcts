@@ -24,8 +24,9 @@ class MCTS_Task(SearchTask):
                  roll_branch=1, roll_forward_steps=3, time_limit=None, iteration_limit=3, exploration_constant=0.7,
                  alpha=0.5, inf=1.0, temperature=0.7, max_tokens=2048, seed=170, max_length=2048, truncation=True,
                  do_sample=True, max_new_tokens=256, use_case_prompt=False, use_reflection='simple', low=0, high=1,
-                 evaluate='', sample_value='simple', answer=None, verify_method='string', lang='en', weighted_verify=False, img_path=''):
-        super().__init__(data, propose_method, value_method, clip=None, clip_processor=None, llm=None, tokenizer=None)
+                 evaluate='', sample_value='simple', answer=None, verify_method='string', lang='en', weighted_verify=False, img_path='',
+                 clip=None, clip_processor=None, llm=None, tokenizer=None, model_dict = None):
+        super().__init__(data, propose_method, value_method)
         assert 0 <= low < high, "Inappropriate value range!"
         self.model = model
         self.processor = processor
@@ -33,6 +34,7 @@ class MCTS_Task(SearchTask):
         self.clip_processor = clip_processor
         self.llm = llm
         self.tokenizer = tokenizer
+        self.model_dict = model_dict
         self.img_path = img_path
         self.mode = 'mcts'
         self.temperature = temperature
