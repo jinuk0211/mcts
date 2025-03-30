@@ -289,25 +289,16 @@ class MCTS_Task(SearchTask):
             p = p + _ + ' '
         p = p.strip()
 
-        if self.lang == 'zh':
-            if '已解决' in p or '已经解决' in p:
-                if step_n > 1:
-                    print('此步问题已解决，停止下探。\n')
-                    print('标准化后的意见: <end>\n')
-                    return '<end>'
-            print('标准化后的意见: <continue>\n')
+        
+        if 'unsolved' in p or step_n <= 1:
+            print('구해진 reflection: <continue>\n')
             return '<continue>'
-
+        elif 'solved' in p:
+            print('구해진 reflection: <end>\n')
+            return '<end>'
         else:
-            if 'unsolved' in p or step_n <= 1:
-                print('标准化后的意见: <continue>\n')
-                return '<continue>'
-            elif 'solved' in p:
-                print('标准化后的意见: <end>\n')
-                return '<end>'
-            else:
-                print('标准化后的意见: <continue>\n')
-                return '<continue>'
+            print('구해진 reflection: <continue>\n')
+            return '<continue>'
 
     def get_reflection(self, y, step_n):
         if self.propose_method in ['local', 'mistral', 'llama'] and self.lang == 'en':
@@ -330,7 +321,7 @@ class MCTS_Task(SearchTask):
             response = get_proposal(self.model, self.processor, reflection_prompt,self.img_path)
             cnt -= 1
         if not response:
-            print('获得意见失败！\n')
+            print('reflection 획득 실패\n')
             return ''
 
         p = ''
@@ -338,32 +329,16 @@ class MCTS_Task(SearchTask):
             p = p + _ + ' '
         p = p.strip()
 
-        if self.lang == 'zh':
-            if '已解决' in p or '已经解决' in p:
-                if step_n > 1:
-                    print('此步问题已解决，停止下探。\n')
-                    return '<end>'
-                else:
-                    return ''
-
-            if '意见:' not in p:
+        if 'Problem solved' in p:
+            print('구해진 reflection: <end>\n')
+            return '<end>'
+        else:
+            if 'Analysis:' not in p:
                 print('输出格式有误！\n')
                 return ''
-            revised_ = p.split('意见:')[1]
-            print(f'标准化后的意见:{revised_}\n')
+            revised_ = p.split('Analysis:')[1].strip()
+            print(f'구해진 reflection:{revised_}\n')
             return revised_
-
-        else:
-            if 'Problem solved' in p:
-                print('标准化后的意见: <end>\n')
-                return '<end>'
-            else:
-                if 'Analysis:' not in p:
-                    print('输出格式有误！\n')
-                    return ''
-                revised_ = p.split('Analysis:')[1].strip()
-                print(f'标准化后的意见:{revised_}\n')
-                return revised_
 
 
     def get_summary(self, y):
@@ -569,7 +544,6 @@ class MCTS_Task(SearchTask):
 
 
         else: #qwen, llama3 등의 lmm
-            # confidence, response = get_value(prompt, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path)
             response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path,self.clip,self.clip_processor, self.llm)
             value = self.value_outputs_unwrap(response, self.low, self.high)
             # value = (1-self.alpha)*confidence + self.alpha*value
