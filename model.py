@@ -1,6 +1,6 @@
 import torch
 from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor, Qwen2_5_VLForConditionalGeneration
-#  MllamaForConditionalGeneration
+CLIPModel, AutoModelForCausalLM #MllamaForConditionalGeneration
 from qwen_vl_utils import process_vision_info
 
 def qwen(model):
@@ -18,14 +18,22 @@ def qwen(model):
 def clip(model):
     if model == 'clip':
         print('init clip model')
-
+        clip_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14-336")
+        clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14-336")
         return clip_model, clip_processor
 
-def LLM():
+def LLM(model):
     if model == 'qwen':
         print('init llm model')       
+        model_name = "Qwen/Qwen2.5-7B-Instruct"
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        return model, tokenizer
 
-        return llm
 def llama(model):
     if model == 'llama':
         print('init llama 3.2 vision 11b model')
@@ -37,7 +45,30 @@ def llama(model):
         )
         processor = AutoProcessor.from_pretrained(model_id)
         return model, processor
-def llm_proposal():
+
+def llm_proposal(model,tokenizer,prompt,model_name='qwen'):
+    if model_name =='qwen':
+        messages = [
+            {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ]
+        text = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+
+        generated_ids = model.generate(
+            **model_inputs,
+            max_new_tokens=512
+        )
+        generated_ids = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+        ]
+
+        response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        return response
 
 
 

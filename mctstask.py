@@ -20,7 +20,7 @@ from prompt import llm_prompt
 
 
 class MCTS_Task(SearchTask):
-    def __init__(self,data, model, processor,clip,clip_processor,llm, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
+    def __init__(self,data, model, processor, clip, clip_processor, llm, tokenizer, propose_method='qwen', value_method='glm', branch=3, end_gate=0.9, roll_policy='greedy',
                  roll_branch=1, roll_forward_steps=3, time_limit=None, iteration_limit=3, exploration_constant=0.7,
                  alpha=0.5, inf=1.0, temperature=0.7, max_tokens=2048, seed=170, max_length=2048, truncation=True,
                  do_sample=True, max_new_tokens=256, use_case_prompt=False, use_reflection='simple', low=0, high=1,
@@ -32,6 +32,7 @@ class MCTS_Task(SearchTask):
         self.clip = clip
         self.clip_processor = clip_processor
         self.llm = llm
+        self.tokenizer = tokenizer
         self.img_path = img_path
         self.mode = 'mcts'
         self.temperature = temperature
@@ -138,7 +139,7 @@ class MCTS_Task(SearchTask):
             
     def get_first_step(self, y):
         prompt = self.image_description(self.question, y)
-        response = get_proposal(self.model, self.processor, prompt,self.img_path)
+        response = get_proposal(self.model, self.processor, prompt, self.img_path)
         return response
     
     def get_next_step(self, y, step_n):
@@ -519,38 +520,24 @@ class MCTS_Task(SearchTask):
         if y in self.value_cache.keys():
             return self.value_cache[y]
         prompt_answer = 'Problem: ' + self.question + '\nSolution:\n' + y
+
         if 'Image Description' in action:
             lmm_prompt = self.image_description_score(self.question, y)
+            confidence = get_clip_score(action,self.img_path)
         else:
             lmm_prompt = self.value_prompt_wrap(self.question, y) 
-        llm_prompt = self.llm_prompt(self.question, y)
-        if self.value_method == 'local_prm': #clip, prm + llm + prm
-            confidence, value_score = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path, self.clip,self.clip_processor, self.llm)
-            value = (1-self.alpha)*confidence + self.alpha*value_score
-            print(f'获得评分:{value}\n') #评分
-            self.value_cache.update({y: value})
-            return value
-            # seed=170
-            # response = []
-            # cnt = 2
-            # while not response and cnt:
-            #     response = composer2_5(prompt_answer, model=BASE_MODEL_GPT, temperature=self.temperature, max_tokens=self.max_tokens)
-            #     cnt -= 1
-            # if not response:
-            #     print(f'obtain<{self.value_method}>score fail!\n')
-            #     return []
-            # return response
-            #미완
+            llm_prompt = self.llm_prompt(self.question,y)
+            confidence = self.llm_proposal(self.llm,self.tokenizer,llm_prompt)
 
 
-        else: #qwen, llama3 등의 lmm
-            response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path,self.clip,self.clip_processor, self.llm)
-            value = self.value_outputs_unwrap(response, self.low, self.high)
-            # value = (1-self.alpha)*confidence + self.alpha*value
-            print(f'response and 타입{response,type(response)}\n')
-            print(f'unwrapped_value:{value}\n') #평가받기
-            self.value_cache.update({y: value})
-            return value
+      #qwen, llama3 등의 lmm
+        response = get_value(self.model,self.processor, prompt_answer, llm_prompt, lmm_prompt, action, self.value_method, img_path=self.img_path,self.clip,self.clip_processor, self.llm)
+        value = self.value_outputs_unwrap(response, self.low, self.high)
+        # value = (1-self.alpha)*confidence + self.alpha*value
+        print(f'response and 타입{response,type(response)}\n')
+        print(f'unwrapped_value:{value}\n') #평가받기
+        self.value_cache.update({y: value})
+        return value
 
 # clip_model = CLIPModel.from_pretrained('openai/clip-vit-large-patch14-336')
 # clip_processor = AutoProcessor.from_pretrained('openai/clip-vit-large-patch14-336')

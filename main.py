@@ -32,8 +32,9 @@ def run(args):
         print(f'File must be standardized json!\nError type:{e}\n')
         return
     assert data_len > 0, "Data list is empty!\n"
-
+    llm, tokenizer = LLM('qwen')
     model, processor = qwen('Qwen2_5')
+    clip, clip_processor = clip('clip')
     output_list = []
     correct_count = 0
     for i in range(len(dataset.data)):
@@ -56,17 +57,18 @@ def run(args):
         # evaluate metrics
         if args.evaluate:
             dataset.data['prediction'] = output['summary']
-            dataset.data = dataset.data.drop(columns=['image'])
-        output_path = '/workspace/mcts/dataset.xlsx'
-        dataset.data.to_excel(output_path, index=False)
-        judge_kwargs = {
-            'nproc': 4,
-            'verbose': False,
-            'retry': 3,
-            'model': "gpt-4o-mini"}
+            
+    output_path = '/workspace/mcts/dataset.xlsx'
+    dataset.data = dataset.data.drop(columns=['image'])
+    dataset.data.to_excel(output_path, index=False)
+    judge_kwargs = {
+        'nproc': 4,
+        'verbose': False,
+        'retry': 3,
+        'model': "gpt-4o-mini"}
 
-        eval_results = dataset.evaluate('/workspace/mcts/dataset.xlsx', **judge_kwargs)
-        print(eval_results)
+    eval_results = dataset.evaluate('/workspace/mcts/dataset.xlsx', **judge_kwargs)
+    print(eval_results)
         # output
 
     

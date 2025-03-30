@@ -3,11 +3,15 @@ import re
 import os
 
 class SearchTask(object):
-    def __init__(self, data, model, processor, propose_method='glm', value_method='glm'):
+    def __init__(self, data, model, processor, clip, clip_processor, llm, tokenizer, propose_method='qwen', value_method='glm'):
         super().__init__()
         self.question = data
         self.model = model
         self.processor = processor
+        self.clip = clip
+        self.clip_processor = clip_processor
+        self.llm = llm
+        self.tokenizer = tokenizer
         self.propose_method = propose_method
         self.value_method = value_method
         self.value_cache = {}
