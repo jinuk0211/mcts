@@ -1,6 +1,6 @@
 import torch
 from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor, Qwen2_5_VLForConditionalGeneration
-CLIPModel, AutoModelForCausalLM, MllamaForConditionalGeneration
+from transformers import CLIPModel, AutoModelForCausalLM, MllamaForConditionalGeneration
 from qwen_vl_utils import process_vision_info
 
 def qwen(model):
@@ -145,13 +145,13 @@ def get_proposal(model, processor, prompt, img_path, model_name = 'qwen',model_d
             return []
         return response[0]
 
-    elif model_name = 'llama'
+    elif model_name == 'llama':
 
         image = Image.open(img_path)
 
         messages = [
             {"role": "user", "content": [
-                {"type": "image"},{"type": "text", f"{prompt}"}]}
+                {"type": "image"},{"type": "text","text": f"{prompt}"}]}
                 ]
         input_text = processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = processor(
