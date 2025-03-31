@@ -1,4 +1,4 @@
-from model import qwen
+from model import qwen, clip,llm, llava
 from mctstask import MCTS_Task
 from node import treeNode
 from mcts import selectNode, get_next_steps_expand, expand
@@ -35,6 +35,7 @@ def run(args):
     llm, tokenizer = LLM('qwen')
     model, processor = qwen('Qwen2_5')
     clip, clip_processor = clip('clip')
+    model_dict = llava('critic')
     output_list = []
     correct_count = 0
     for i in range(len(dataset.data)):
